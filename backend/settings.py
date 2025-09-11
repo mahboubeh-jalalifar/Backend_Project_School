@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'accounts',
     'students',
     'teachers',
+    'parents'
 ]
 
 AUTH_USER_MODEL = 'accounts.UserModel'
