@@ -39,22 +39,43 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'drf_spectacular',
     'accounts',
     'students',
     'teachers',
-    'parents'
+    'parents',
+
 ]
 
 AUTH_USER_MODEL = 'accounts.UserModel'
 
 REST_FRAMEWORK= {
-    'DEFAULT_AUTHENTICATION_CLASS': ('rest_framework_simplejwt.authentication.JWTAuthentication')
+    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication',],
+    'DEFAULT_PERMISSION_CLASSES':['rest_framework.permissions.AllowAny',],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME' : timedelta (minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta (days=1),
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Backend_ API",
+    "DESCRIPTION": "Role-based API (student/teacher/parent) with JWT auth",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SECURITY": [{"BearerAuth": []}],
+    "COMPONENTS": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
 }
 
 MIDDLEWARE = [
