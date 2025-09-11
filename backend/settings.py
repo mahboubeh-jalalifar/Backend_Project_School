@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'accounts',
     'students',
+    'teachers',
 ]
 
 AUTH_USER_MODEL = 'accounts.UserModel'
