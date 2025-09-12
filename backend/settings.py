@@ -59,10 +59,11 @@ from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME' : timedelta (minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta (days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Backend_ API",
+    "TITLE": "Backend_Project API",
     "DESCRIPTION": "Role-based API (student/teacher/parent) with JWT auth",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,

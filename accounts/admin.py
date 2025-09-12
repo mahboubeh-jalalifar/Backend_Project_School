@@ -35,8 +35,7 @@ class UserInLine (DjangoUserAdmin):
                   )
 
     add_fieldsets=  (
-        (None, {
-            "classes":("(wide,)"),
+        (None, {"classes":("wide",),
             "fields": ("username","password1","password2","role","email","first_name","last_name")
             }),
                     )
