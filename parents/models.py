@@ -12,7 +12,7 @@ class Children (models.Model):
         return self.name
 
 class ParentsModel (models.Model):
-    user= models.OneToOneField (settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user= models.OneToOneField (settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="parent_profile")
     type_of_family_relation= models.CharField (choices=Relation.choices)
     children = models.ManyToManyField (Children, related_name="parent_of_children")
     def __str__ (self):

@@ -13,7 +13,7 @@ class Subjects (models.Model):
         return self.name
 
 class TeacherModel (models.Model):
-    user= models.OneToOneField (settings.AUTH_USER_MODEL, on_delete= models.CASCADE)
+    user= models.OneToOneField (settings.AUTH_USER_MODEL, on_delete= models.CASCADE, related_name="teacher_profile")
     department= models.CharField (max_length=50)
     subjects= models.ManyToManyField (Subjects, related_name= "Teachers_Subject")
     education_level= models.CharField (choices=Education.choices, default = Education.Bachelor)
