@@ -6,6 +6,9 @@ from .models import Course, Class , Lesson, Enrollment, Attendance
 from .serializers import CourseSerializer, ClassListSerializer, ClassSerializer, LessonSerializer, EnrollmentSerializer, AttendanceSerializer
 from rest_framework.response import Response
 from django.db.models import Q
+from django.contrib.auth import get_user_model
+
+User= get_user_model ()
 
 
 class CourseViewSet (viewsets.ModelViewSet):
@@ -35,12 +38,12 @@ class IsEnrolledOrTeacherOrAdmin (permissions.BasePermission):
 
 class ClassViewSet (viewsets.ModelViewSet):
     queryset = Class.objects.select_related ("teacher__user", "course","lesson").filter(is_active= True)
-
+    
+    
     def get_serializer_class(self):
-        if self.action in ["list"]:
+        if self.action == "list":
             return ClassListSerializer
-        elif self.action in ["retrieve"]:
-            return ClassSerializer
+        return ClassSerializer
         
     def get_permissions(self):
         if self.action in ["update","partial_update","create","destroy"]:
@@ -51,18 +54,24 @@ class ClassViewSet (viewsets.ModelViewSet):
     def get_queryset(self):
         user= self.request.user
         queryset= self.queryset
+        
+        teacher_profile= getattr (user, "teacher_profile", None)
+        student_profile= getattr (user, "student_profile")
 
-        if hasattr (user,"teacher_profile") and not user.is_staff:
-            queryset= queryset.filter (teacher=user.teacher_profile)
-        elif hasattr (user,"student_profile") and not user.is_staff :
-            queryset= queryset.filter (enrollments__student= user.student_profile,
+        if teacher_profile and not user.is_staff:
+            return queryset.filter (teacher=teacher_profile)
+        
+        elif student_profile and not user.is_staff :
+            return queryset.filter (enrollments__student= student_profile,
                                        enrollments__is_active=True)
         
         return queryset
         
     def perform_create(self, serializer):
-        if getattr (self.request.user, "teacher_profile", None) and not self.request.user.is_staff :
-            return serializer.save (teacher= self.request.user.teacher_profile)
+        user= self.request.user
+        teacher_profile = getattr (user, "teacher_profile", None)
+        if teacher_profile and not self.request.user.is_staff :
+            return serializer.save (teacher= teacher_profile)
         else:
             return serializer.save()
         
@@ -127,11 +136,16 @@ class LessonViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user= self.request.user
-        if hasattr (user, "teacher_profile") and not user.is_staff :
-            return Lesson.objects.filter (class_instance__teacher= user.teacher_profile)
-        elif hasattr (user, "student_profile") and not user.is_staff :
+        queryset= self.queryset
+        teacher_profile= getattr (user, "teacher_profile", None)
+        student_profile= getattr (user, "student_profile", None)
+
+        if teacher_profile and not user.is_staff :
+            return Lesson.objects.filter (class_instance__teacher= teacher_profile)
+        
+        elif student_profile and not user.is_staff :
             return Lesson.objects.filter (
-                class_instance__enrollments__student= user.student_profile,
+                class_instance__enrollments__student=student_profile,
                 class_instance__enrollments__is_active=True)
         
         return Lesson.objects.all ()
@@ -177,12 +191,16 @@ class EnrollmentViewSet (viewsets.ModelViewSet):
     serializer_class= EnrollmentSerializer
 
     def get_queryset(self):
-        user= self.request.user 
-        if hasattr (user, "student_profile") and not user.is_staff:
-            return Enrollment.objects.filter (student= user.student_profile,is_active=True)
+        user = self.request.user
+
+        teacher_profile= getattr (user, "teacher_profile", None)
+        student_profile= getattr (user, "student_profile", None)
+
+        if student_profile and not user.is_staff:
+            return Enrollment.objects.filter (student= student_profile, is_active=True)
         
-        if hasattr (user, "teacher_profile") and not user.is_staff :
-            return Enrollment.objects.filter (class_instance__teacher= user.teacher_profile,is_active=True)
+        if teacher_profile and not user.is_staff :
+            return Enrollment.objects.filter (class_instance__teacher= teacher_profile, is_active=True)
         
     def get_permissions(self):
         if self.action in ["create"]:
@@ -192,8 +210,12 @@ class EnrollmentViewSet (viewsets.ModelViewSet):
         return [permissions.IsAuthenticated()]
 
     def perform_create(self, serializer):
-        if hasattr (self.request.user, "student_profile") and not self.request.user.is_staff :
-            serializer.save (student= self.request.user.student_profile)
+        user= self.request.user
+
+        student_profile= getattr (user, "student_profile", None)
+
+        if student_profile and not self.request.user.is_staff :
+            serializer.save (student= student_profile)
         else:
             return serializer.save()
 
