@@ -65,7 +65,7 @@ class Lesson (models.Model):
     grade= models.CharField (max_length=50)
     prerequisites= models.CharField(max_length=50, blank=True)
     credits= models.PositiveIntegerField(default=3)
-    semester= models.CharField()
+    semester= models.CharField(max_length=20)
     schedule= models.DateTimeField ()
     duration= models.PositiveIntegerField(default=45)
     lesson_type= models.CharField(choices=ClassType.choices,default=ClassType.Theory)
@@ -74,18 +74,14 @@ class Lesson (models.Model):
     def __str__ (self):
         return f"{self.code}: {self.title}"
 
-
-
-
 class Enrollment (models.Model):
     student= models.ForeignKey ("students.StudentModel", on_delete=models.CASCADE, related_name="enrollments")
     class_instance = models.ForeignKey (Class, on_delete=models.CASCADE, related_name="enrollments")
     enrolled_at = models.DateField (auto_now_add=True)
-    capacity= models.PositiveIntegerField (default=20)
     is_active= models.BooleanField (default=True)
 
     class Meta:
-        unique_together= ["student","classes"]
+        unique_together= ["student","class_instance"]
 
     def __str__ (self):
         return f"{self.student} enrolled in {self.class_instance}"
@@ -110,14 +106,14 @@ class Attendance (models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="lesson_attendance")
     course = models.ForeignKey (Course, on_delete= models.CASCADE, related_name="course_attendance")
     recorded_at = models.DateTimeField (auto_now_add=True)
-    note = models.CharField (max_length=300)
+    note = models.CharField (max_length=300, blank=True)
     status = models.CharField (choices= Status.choices, default= Status.Absent)
 
     class Meta:
         unique_together = ["student","lesson"]
     
     def __str__ (self):
-        return f"{self.student.user.get_full_name()} {self.lesson.title} {self.note} {self.status}"
+        return f"{self.student} - {self.lesson.title} - {self.note} - {self.status}"
 
 
 

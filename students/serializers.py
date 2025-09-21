@@ -7,7 +7,7 @@ class StudentSerializer (serializers.ModelSerializer):
         fields= ["id","user","grade","major","GPA","enrollment_date","is_active","bio"]
         read_only_fields= ["id"]
     
-    def create (self,validated_data):
-        user= validated_data.pop ("user")
-        student= StudentModel.objects.create (user=user,**validated_data)
-        return student
+    # def create (self,validated_data):
+    #     user= validated_data.pop ("user")
+    #     student= StudentModel.objects.create (user=user,**validated_data)
+    #     return student

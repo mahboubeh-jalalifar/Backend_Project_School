@@ -5,7 +5,7 @@ from .models import Lesson, Course, Class, Attendance, Enrollment
 class LessonAdmin (admin.ModelAdmin):
     search_fields=("code","title")
     list_display= ("id","code","title","start_date","prerequisites","credits","schedule","duration","lesson_type")
-    list_filter= ("","","","","","","","")
+    list_filter= ("code","title")
     date_hierarchy= "start_date"
 
 @admin.register (Course)

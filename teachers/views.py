@@ -11,7 +11,7 @@ class IsOwnerOrAdmin (permissions.BasePermission):
         return getattr (obj,"user_id",None) == request.user.id
 
 class TeacherViewSet (viewsets.ModelViewSet):
-    queryset= TeacherModel.objects.all ()
+    queryset= TeacherModel.objects.select_related ("user").all ()
     serializer_class = TeacherSerializer 
 
     def get_permissions(self):
@@ -21,3 +21,7 @@ class TeacherViewSet (viewsets.ModelViewSet):
             return [permissions.IsAuthenticated(),IsOwnerOrAdmin()]
         else:
             return [permissions.IsAuthenticated()]
+    
+    def perform_create(self, serializer):
+        user = self.request.user if not self.request.user.is_staff else serializer.validated_data.get ("user", self.request.user)
+        serializer.save(user=user)

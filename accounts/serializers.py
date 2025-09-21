@@ -1,19 +1,22 @@
 from .models import UserModel
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import get_user_model
+
+User= get_user_model ()
 
 
 class UserModelSerializer (serializers.ModelSerializer):
     password = serializers.CharField  (write_only= True)
 
     class Meta:
-        model= UserModel
+        model= User
         fields = ["id","username","password","first_name","last_name","email","role","gender","date_of_birth","created_at","updated_at","phone","address","national_id_number","province","city"] 
         read_only_fields= ["id","created_at","updated_at"]
 
     def create (self,validated_data):
       password = validated_data.pop ("password")
-      user = UserModel (
+      user = User (
       username=validated_data ["username"],
       email= validated_data["email"],
       first_name=validated_data["first_name"],
@@ -36,12 +39,13 @@ class UserModelSerializer (serializers.ModelSerializer):
       password = validated_data.pop ("password",None)
       for key,value in validated_data.items():
         setattr (instance,key,value)
-        if password:
+
+      if password:
           validate_password(instance,password)
           instance.set_password (password)
 
-        instance.save ()
-        return instance
+      instance.save ()
+      return instance
 
 
       

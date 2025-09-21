@@ -1,11 +1,13 @@
 from django.shortcuts import render
-
+from django.contrib.auth import get_user_model
 from django.shortcuts import render
 from rest_framework import viewsets, permissions, status
 from rest_framework.viewsets import ModelViewSet
 from .serializers import UserModelSerializer
 from rest_framework.response import Response
 from .models import UserModel
+
+User= get_user_model ()
 
 class IsOwnerOradmin (permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -14,7 +16,7 @@ class IsOwnerOradmin (permissions.BasePermission):
         return getattr(obj,"user_id",None) == request.user.id
 
 class UserModelViewSet (viewsets.ModelViewSet):
-    queryset = UserModel.objects.all ()
+    queryset = User.objects.all ().order_by("id")
     serializer_class = UserModelSerializer 
 
     def get_permissions (self):

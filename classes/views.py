@@ -2,9 +2,11 @@ from django.shortcuts import render
 from rest_framework import permissions,viewsets, status, decorators
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
-from .models import Course, Class , Lesson, Enrollment
+from .models import Course, Class , Lesson, Enrollment, Attendance
 from .serializers import CourseSerializer, ClassListSerializer, ClassSerializer, LessonSerializer, EnrollmentSerializer, AttendanceSerializer
 from rest_framework.response import Response
+from django.db.models import Q
+
 
 class CourseViewSet (viewsets.ModelViewSet):
     queryset= Course.objects.all ()
@@ -50,13 +52,10 @@ class ClassViewSet (viewsets.ModelViewSet):
         user= self.request.user
         queryset= self.queryset
 
-        if hasattr (user, "teacher_profile") and not user.is_staff:
+        if hasattr (user,"teacher_profile") and not user.is_staff:
             queryset= queryset.filter (teacher=user.teacher_profile)
-        elif hasattr (user, "student_profile") and not user.is_staff :
-            if self.action in ["list"]:
-                pass
-        else:
-            queryset= queryset.filter (enrollments__student= user.teacher_profile,
+        elif hasattr (user,"student_profile") and not user.is_staff :
+            queryset= queryset.filter (enrollments__student= user.student_profile,
                                        enrollments__is_active=True)
         
         return queryset
@@ -70,7 +69,7 @@ class ClassViewSet (viewsets.ModelViewSet):
     @action (detail=True, methods=["get"])
     def lessons (self, request, pk=None):
         class_instance= self.get_object ()
-        lessons= class_instance.lessons.all().order_by("date")
+        lessons= class_instance.lessons.all().order_by("schedule")
         serializer= LessonSerializer (lessons, many= True)
         return Response (serializer.data)
 
@@ -81,7 +80,7 @@ class ClassViewSet (viewsets.ModelViewSet):
         if not (request.user.is_staff or
             (hasattr (request.user, "teacher_profile") and
             class_instance.teacher== request.user.teacher_profile)):
-            return Response ({"error:permission denied"}, status= status.HTTP_403_FORBIDDEN)
+            return Response ({"error":"permission denied"}, status= status.HTTP_403_FORBIDDEN)
 
         enrollments= class_instance.enrollments.filter(is_active=True).order_by("date")
         serializer= EnrollmentSerializer (enrollments, many=True)
@@ -97,7 +96,7 @@ class ClassViewSet (viewsets.ModelViewSet):
         data= {"class_id": class_instance.id}
         serializer= EnrollmentSerializer (data= data , context={"request": request})
 
-        if serializer.is_valid :
+        if serializer.is_valid () :
             serializer.save (student= request.user.student_profile, class_instance= class_instance)
             return Response (serializer.data, status=status.HTTP_201_CREATED)
         return Response (serializer.errors, status=status.HTTP_403_FORBIDDEN)
@@ -149,7 +148,7 @@ class LessonViewSet(viewsets.ModelViewSet):
         if request.method == "GET":
             attendance= lesson.lesson_attendance.all ()
             serializer= AttendanceSerializer (attendance, many=True)
-            return (serializer.data)
+            return Response (serializer.data)
         
         elif request.method == "POST":
             if not (request.user.is_staff or (hasattr (request.user, "teacher_profile") and
@@ -158,13 +157,29 @@ class LessonViewSet(viewsets.ModelViewSet):
                                  status=status.HTTP_403_FORBIDDEN)
             
             
+            attendance_data = request.data.get("attendance", [])
+            for item in attendance_data:
+                item["lesson"] = lesson.id
+                serializer = AttendanceSerializer(data=item)
+                if serializer.is_valid():
+                    Attendance.objects.update_or_create(
+                        lesson=lesson,
+                        student_id=item["student"],
+                        defaults={
+                            "status": item["status"],
+                            "note": item.get("note", "")
+                        }
+                    )
+            
+            return Response({"message": "Attendance recorded successfully"})
+        
 class EnrollmentViewSet (viewsets.ModelViewSet):
     serializer_class= EnrollmentSerializer
 
     def get_queryset(self):
         user= self.request.user 
         if hasattr (user, "student_profile") and not user.is_staff:
-            return Enrollment.objects.filter (user= user.student_profile,is_active=True)
+            return Enrollment.objects.filter (student= user.student_profile,is_active=True)
         
         if hasattr (user, "teacher_profile") and not user.is_staff :
             return Enrollment.objects.filter (class_instance__teacher= user.teacher_profile,is_active=True)
